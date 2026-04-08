@@ -1,0 +1,51 @@
+export default async function handler(req, res) {
+  if (req.method !== "POST") {
+    res.status(405).json({ ok: false, error: "Method not allowed" });
+    return;
+  }
+
+  const body = req.body ?? {};
+  const email = typeof body.email === "string" ? body.email.trim() : "";
+  if (!email) {
+    res.status(400).json({ ok: false, error: "Email is required" });
+    return;
+  }
+
+  // Forward to your Google Sheet via an Apps Script Web App (recommended).
+  // Set this in Vercel project env vars.
+  const webhookUrl = process.env.GOOGLE_SHEETS_WEBHOOK_URL;
+
+  if (!webhookUrl) {
+    // Still return OK so you can test the UX before wiring up Google Sheets.
+    res.status(200).json({
+      ok: true,
+      forwarded: false,
+      note:
+        "Missing GOOGLE_SHEETS_WEBHOOK_URL. Set it in your Vercel env vars to store leads in Google Sheets.",
+    });
+    return;
+  }
+
+  try {
+    const fwd = await fetch(webhookUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+
+    if (!fwd.ok) {
+      const text = await fwd.text().catch(() => "");
+      res.status(502).json({
+        ok: false,
+        error: "Failed to forward to Google Sheets webhook",
+        details: text || `Status ${fwd.status}`,
+      });
+      return;
+    }
+
+    res.status(200).json({ ok: true, forwarded: true });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: "Server error", details: String(err?.message || err) });
+  }
+}
+

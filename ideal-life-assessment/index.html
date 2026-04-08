@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>YOLO Index — Are You Letting Your Life Shine?</title>
+    <meta
+      name="description"
+      content="A 3–5 minute reflection from BlingBling: clarity, alignment, action, and what holds you back—without judgment."
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="bg" aria-hidden="true"></div>
+    <main class="container">
+      <header class="topbar">
+        <div class="brand">
+          <div class="logo" aria-hidden="true"></div>
+          <div class="brandText">
+            <div class="brandName" id="brandName">YOLO Index</div>
+            <div class="brandTagline" id="brandTagline">by BlingBling</div>
+          </div>
+        </div>
+        <a class="ghostBtn" id="restartBtn" href="#" hidden>Restart</a>
+      </header>
+
+      <section class="card" id="screenIntro">
+        <div class="kicker" id="introKicker">3–5 minutes</div>
+        <h1 class="h1" id="introTitle">Are you letting your life shine?</h1>
+        <p class="p" id="introBody">
+          A private reflection for people who are doing well on paper—but sense something deeper wants attention.
+        </p>
+        <ul class="bullets" id="introBullets"></ul>
+        <div class="row">
+          <button class="primaryBtn" id="startBtn" type="button">Start assessment</button>
+          <button class="secondaryBtn" id="liSignInBtn" type="button" hidden>Sign in with LinkedIn</button>
+        </div>
+        <div class="fineprint" id="introFineprint">
+          By continuing, you agree to our <a href="#" id="privacyLink">privacy policy</a>.
+        </div>
+      </section>
+
+      <section class="card" id="screenQuiz" hidden>
+        <div class="quizTop">
+          <div class="progressWrap" aria-label="Progress">
+            <div class="progressBar" id="progressBar"></div>
+          </div>
+          <div class="progressMeta">
+            <div class="progressText" id="progressText">Question 1 of 11</div>
+            <div class="pill" id="dimensionPill">Clarity</div>
+          </div>
+        </div>
+
+        <h2 class="h2" id="questionTitle">Question text</h2>
+        <p class="p subtle" id="questionHelp" hidden></p>
+
+        <div class="answers" id="answers"></div>
+
+        <div class="navRow">
+          <button class="ghostBtn" id="backBtn" type="button">Back</button>
+          <button class="primaryBtn" id="nextBtn" type="button" disabled>Next</button>
+        </div>
+      </section>
+
+      <section class="card" id="screenResults" hidden>
+        <div class="resultsHeader">
+          <div class="kicker" id="resultsKicker">Your YOLO Index</div>
+          <h2 class="h1 resultsTypeTitle" id="resultsTitle">🟢 Fully Lit</h2>
+          <p class="p" id="resultsSummary"></p>
+        </div>
+
+        <div class="panel resultsPanel">
+          <div class="panelTitle">Insight</div>
+          <div class="callout" id="insightCallout"></div>
+        </div>
+        <div class="panel resultsPanel">
+          <div class="panelTitle">A question to sit with</div>
+          <blockquote class="reflectionQuote" id="reflectionQuote"></blockquote>
+        </div>
+
+        <div class="ctaRow" id="resultsPrimaryCtaRow">
+          <a class="primaryBtn linkBtn" id="resultsCoachingCta" href="#" target="_blank" rel="noreferrer"
+            >Explore coaching</a
+          >
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="panel">
+          <div class="panelTitle">Share</div>
+          <p class="p subtle shareHint">
+            No numeric score is shown—just your pattern. Share the assessment if it sparked something.
+          </p>
+          <div class="row">
+            <button class="secondaryBtn" id="shareLinkedInBtn" type="button">Share on LinkedIn</button>
+            <button class="ghostBtn" id="copyLinkBtn" type="button">Copy link</button>
+          </div>
+          <div class="fineprint" id="shareFineprint" hidden></div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="leadWrap">
+          <div class="leadCopy">
+            <h3 class="h2" id="leadTitle">Want a short written reflection?</h3>
+            <p class="p" id="leadBody"></p>
+          </div>
+          <form class="leadForm" id="leadForm">
+            <label class="label">
+              Name (optional)
+              <input class="input" name="name" id="leadName" autocomplete="name" />
+            </label>
+            <label class="label">
+              Email
+              <input class="input" name="email" id="leadEmail" type="email" required autocomplete="email" />
+            </label>
+            <button class="primaryBtn" id="leadSubmitBtn" type="submit">Email me</button>
+            <div class="fineprint" id="leadFineprint"></div>
+          </form>
+        </div>
+
+        <div class="ctaRow" id="bookingRow" hidden>
+          <a class="primaryBtn linkBtn" id="calendlyBtn" target="_blank" rel="noreferrer">Book a coffee chat</a>
+          <a class="ghostBtn linkBtn" id="restartFromResultsBtn" href="#">Retake</a>
+        </div>
+      </section>
+
+      <footer class="footer">
+        <div class="footerInner">
+          <span id="footerBrand">YOLO Index</span>
+          <span class="dot">•</span>
+          <a href="#" id="footerPrivacy">Privacy</a>
+        </div>
+      </footer>
+    </main>
+
+    <dialog class="modal" id="privacyModal">
+      <div class="modalCard">
+        <div class="modalTop">
+          <div class="modalTitle">Privacy</div>
+          <button class="ghostBtn" id="closePrivacyBtn" type="button">Close</button>
+        </div>
+        <div class="modalBody" id="privacyBody">
+          <p class="p">
+            This assessment stores your answers in your browser while you take the quiz. If you choose to submit
+            your email, we store your results and contact info to send your report and follow up about coaching.
+          </p>
+          <p class="p subtle">
+            Replace this text with your official privacy policy before publishing.
+          </p>
+        </div>
+      </div>
+    </dialog>
+
+    <script src="./config.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>

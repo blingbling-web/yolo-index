@@ -1,0 +1,6 @@
+{
+  "name": "yolo-index-assessment",
+  "version": "1.0.0",
+  "private": true,
+  "description": "YOLO Index static site + Vercel serverless lead endpoint"
+}
