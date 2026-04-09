@@ -1,7 +1,6 @@
 /* global window, document, navigator */
 
 const CONFIG = window.ASSESSMENT_CONFIG;
-
 const $ = (id) => document.getElementById(id);
 
 const screens = {
@@ -14,14 +13,12 @@ const ui = {
   brandName: $("brandName"),
   brandTagline: $("brandTagline"),
   restartBtn: $("restartBtn"),
-
   introKicker: $("introKicker"),
   introTitle: $("introTitle"),
-  introBody: $("introBody"),
+  introContent: $("introContent"),
   introBullets: $("introBullets"),
   startBtn: $("startBtn"),
   liSignInBtn: $("liSignInBtn"),
-
   progressBar: $("progressBar"),
   progressText: $("progressText"),
   dimensionPill: $("dimensionPill"),
@@ -30,18 +27,20 @@ const ui = {
   answers: $("answers"),
   backBtn: $("backBtn"),
   nextBtn: $("nextBtn"),
-
   resultsKicker: $("resultsKicker"),
   resultsTitle: $("resultsTitle"),
   resultsSummary: $("resultsSummary"),
   insightCallout: $("insightCallout"),
   reflectionQuote: $("reflectionQuote"),
-  resultsCoachingCta: $("resultsCoachingCta"),
-  resultsPrimaryCtaRow: $("resultsPrimaryCtaRow"),
+  schedulingBlock: $("schedulingBlock"),
+  schedulingIntro: $("schedulingIntro"),
+  schedulingTitle: $("schedulingTitle"),
+  schedulingByline: $("schedulingByline"),
+  coffeeChatPhoto: $("coffeeChatPhoto"),
+  calendlyEmbed: $("calendlyEmbed"),
   shareLinkedInBtn: $("shareLinkedInBtn"),
   copyLinkBtn: $("copyLinkBtn"),
   shareFineprint: $("shareFineprint"),
-
   leadForm: $("leadForm"),
   leadTitle: $("leadTitle"),
   leadBody: $("leadBody"),
@@ -49,19 +48,19 @@ const ui = {
   leadEmail: $("leadEmail"),
   leadSubmitBtn: $("leadSubmitBtn"),
   leadFineprint: $("leadFineprint"),
-
   bookingRow: $("bookingRow"),
   calendlyBtn: $("calendlyBtn"),
   restartFromResultsBtn: $("restartFromResultsBtn"),
-
   footerBrand: $("footerBrand"),
   footerPrivacy: $("footerPrivacy"),
   privacyLink: $("privacyLink"),
   privacyModal: $("privacyModal"),
   closePrivacyBtn: $("closePrivacyBtn"),
+  oauthFlash: $("oauthFlash"),
 };
 
 const STORAGE_KEY = `assessment:${CONFIG.assessment.slug}:v2`;
+const LINKEDIN_PROFILE_KEY = `assessment:${CONFIG.assessment.slug}:linkedin`;
 
 function setScreen(name) {
   for (const key of Object.keys(screens)) {
@@ -72,11 +71,6 @@ function setScreen(name) {
 
 function clamp(n, min, max) {
   return Math.min(max, Math.max(min, n));
-}
-
-function percent(part, whole) {
-  if (whole === 0) return 0;
-  return Math.round((part / whole) * 100);
 }
 
 function safeJsonParse(value) {
@@ -113,31 +107,13 @@ function initState() {
 
 function readUtmParams() {
   const url = new URL(window.location.href);
-  const keys = [
-    "utm_source",
-    "utm_medium",
-    "utm_campaign",
-    "utm_content",
-    "utm_term",
-    "li_fat_id",
-  ];
+  const keys = ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term", "li_fat_id"];
   const out = {};
   for (const k of keys) {
     const v = url.searchParams.get(k);
     if (v) out[k] = v;
   }
   return out;
-}
-
-function getQuestion(index) {
-  return CONFIG.questions[index] || null;
-}
-
-function getDimensionMeta(question) {
-  if (!question) return null;
-  if (question.sectionLabel) return { name: question.sectionLabel };
-  const d = CONFIG.dimensions.find((x) => x.id === question.dimensionId);
-  return d || null;
 }
 
 function escapeHtml(s) {
@@ -152,12 +128,25 @@ function escapeHtml(s) {
 function applyBrandCopy() {
   ui.brandName.textContent = CONFIG.brand.name;
   ui.brandTagline.textContent = CONFIG.brand.tagline;
-  ui.footerBrand.textContent = CONFIG.brand.name;
+  ui.footerBrand.textContent = CONFIG.brand.footerName || CONFIG.brand.name;
   document.title = CONFIG.assessment.title;
 
   ui.introKicker.textContent = CONFIG.assessment.introKicker;
   ui.introTitle.textContent = CONFIG.assessment.introTitle;
-  ui.introBody.textContent = CONFIG.assessment.introBody;
+
+  if (ui.introContent) {
+    ui.introContent.innerHTML = "";
+    const paras =
+      Array.isArray(CONFIG.assessment.introParagraphs) && CONFIG.assessment.introParagraphs.length > 0
+        ? CONFIG.assessment.introParagraphs
+        : [CONFIG.assessment.introBody].filter(Boolean);
+    for (const text of paras) {
+      const p = document.createElement("p");
+      p.className = "p";
+      p.textContent = text;
+      ui.introContent.appendChild(p);
+    }
+  }
 
   ui.introBullets.innerHTML = "";
   for (const bullet of CONFIG.assessment.introBullets) {
@@ -166,13 +155,248 @@ function applyBrandCopy() {
     ui.introBullets.appendChild(li);
   }
 
-  ui.calendlyBtn.href = CONFIG.funnel.calendlyUrl;
+  ui.calendlyBtn.href = CONFIG.funnel.calendlyUrl || "#";
   ui.calendlyBtn.textContent = CONFIG.funnel.bookingLabel;
+  ui.schedulingTitle.textContent = CONFIG.funnel.schedulingTitle || "Coffee chat";
+  if (ui.schedulingIntro) {
+    ui.schedulingIntro.textContent = CONFIG.funnel.schedulingIntro || "";
+  }
+  if (ui.coffeeChatPhoto && CONFIG.funnel.coffeeChatImageUrl) {
+    ui.coffeeChatPhoto.src = CONFIG.funnel.coffeeChatImageUrl;
+    ui.coffeeChatPhoto.alt = "Coffee";
+  }
   ui.leadFineprint.textContent = CONFIG.funnel.leadFineprint;
   ui.leadTitle.textContent = CONFIG.funnel.leadTitle;
   ui.leadBody.textContent = CONFIG.funnel.leadBody;
 
-  ui.liSignInBtn.hidden = !CONFIG.linkedin?.enabledSignIn;
+  const li = CONFIG.linkedin || {};
+  const showLinkedIn = Boolean(li.enabledSignIn && String(li.clientId || "").trim());
+  ui.liSignInBtn.hidden = !showLinkedIn;
+  syncLinkedInIntroButton();
+}
+
+function getLinkedInRedirectUri() {
+  return `${window.location.origin}${window.location.pathname}`;
+}
+
+function randomOAuthState() {
+  const a = new Uint8Array(16);
+  crypto.getRandomValues(a);
+  return Array.from(a, (x) => x.toString(16).padStart(2, "0")).join("");
+}
+
+function loadLinkedInProfile() {
+  const raw = window.localStorage.getItem(LINKEDIN_PROFILE_KEY);
+  const p = safeJsonParse(raw);
+  return p && typeof p === "object" ? p : null;
+}
+
+function saveLinkedInProfile(profile) {
+  window.localStorage.setItem(LINKEDIN_PROFILE_KEY, JSON.stringify(profile));
+}
+
+function clearLinkedInProfile() {
+  window.localStorage.removeItem(LINKEDIN_PROFILE_KEY);
+}
+
+function stripOAuthQueryParams() {
+  const url = new URL(window.location.href);
+  ["code", "state", "error", "error_description", "scope"].forEach((k) => url.searchParams.delete(k));
+  const qs = url.searchParams.toString();
+  const next = qs ? `${url.pathname}?${qs}` : url.pathname;
+  window.history.replaceState({}, "", next + url.hash);
+}
+
+function syncLinkedInIntroButton() {
+  if (!ui.liSignInBtn || ui.liSignInBtn.hidden) return;
+  const p = loadLinkedInProfile();
+  if (p) {
+    const label = p.name || p.email || "LinkedIn";
+    ui.liSignInBtn.textContent = `Signed in (${label}) — tap to sign out`;
+  } else {
+    ui.liSignInBtn.textContent = "Sign in with LinkedIn";
+  }
+}
+
+function startLinkedInOAuth() {
+  const clientId = String(CONFIG.linkedin?.clientId || "").trim();
+  if (!clientId) {
+    window.alert("LinkedIn sign-in needs a client ID in config.js (linkedin.clientId).");
+    return;
+  }
+  const state = randomOAuthState();
+  window.sessionStorage.setItem("linkedin_oauth_state", state);
+  const redirectUri = getLinkedInRedirectUri();
+  const auth = new URL("https://www.linkedin.com/oauth/v2/authorization");
+  auth.searchParams.set("response_type", "code");
+  auth.searchParams.set("client_id", clientId);
+  auth.searchParams.set("redirect_uri", redirectUri);
+  auth.searchParams.set("state", state);
+  auth.searchParams.set("scope", "openid profile email");
+  window.location.assign(auth.toString());
+}
+
+async function handleLinkedInOAuthReturn() {
+  const url = new URL(window.location.href);
+  const oauthErr = url.searchParams.get("error");
+  const oauthDesc = url.searchParams.get("error_description");
+  if (oauthErr) {
+    window.sessionStorage.setItem(
+      "linkedin_oauth_flash",
+      oauthDesc || oauthErr || "LinkedIn sign-in was cancelled."
+    );
+    stripOAuthQueryParams();
+    return;
+  }
+
+  const code = url.searchParams.get("code");
+  const state = url.searchParams.get("state");
+  if (!code || !state) return;
+
+  const stored = window.sessionStorage.getItem("linkedin_oauth_state");
+  window.sessionStorage.removeItem("linkedin_oauth_state");
+  if (state !== stored) {
+    window.sessionStorage.setItem("linkedin_oauth_flash", "Sign-in session expired. Please try again.");
+    stripOAuthQueryParams();
+    return;
+  }
+
+  const tokenUrl = CONFIG.endpoints?.linkedinToken || "/api/linkedin-token";
+  const redirectUri = getLinkedInRedirectUri();
+
+  let res;
+  try {
+    res = await fetch(tokenUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code, redirect_uri: redirectUri }),
+    });
+  } catch (err) {
+    window.sessionStorage.setItem("linkedin_oauth_flash", "Could not reach the server to finish sign-in.");
+    stripOAuthQueryParams();
+    return;
+  }
+
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !data.ok) {
+    const msg =
+      (data && data.error) ||
+      (data && data.details && data.details.error_description) ||
+      "Could not complete LinkedIn sign-in.";
+    window.sessionStorage.setItem("linkedin_oauth_flash", typeof msg === "string" ? msg : "Sign-in failed.");
+    stripOAuthQueryParams();
+    return;
+  }
+
+  saveLinkedInProfile({
+    sub: data.sub,
+    name: data.name,
+    email: data.email,
+    picture: data.picture,
+  });
+  window.sessionStorage.setItem("linkedin_oauth_flash", "Signed in with LinkedIn.");
+  stripOAuthQueryParams();
+}
+
+function showOAuthFlashIfAny() {
+  const msg = window.sessionStorage.getItem("linkedin_oauth_flash");
+  if (!msg || !ui.oauthFlash) return;
+  window.sessionStorage.removeItem("linkedin_oauth_flash");
+  ui.oauthFlash.textContent = msg;
+  ui.oauthFlash.hidden = false;
+}
+
+function applyLinkedInToLeadForm() {
+  const p = loadLinkedInProfile();
+  if (!p) return;
+  if (p.name && ui.leadName) ui.leadName.value = p.name;
+  if (p.email && ui.leadEmail) ui.leadEmail.value = p.email;
+}
+
+function applySchedulingHeader() {
+  const funnel = CONFIG.funnel || {};
+  const name = (funnel.coachDisplayName || "Coach").trim();
+  ui.schedulingTitle.textContent = funnel.schedulingTitle || "Coffee chat";
+  if (ui.schedulingIntro) {
+    ui.schedulingIntro.textContent =
+      funnel.schedulingIntro || "Curious to learn more? Schedule time with a coach here!";
+  }
+  const byline = (funnel.coachByline || "").trim();
+  ui.schedulingByline.textContent = byline || `Schedule with ${name}`;
+  const coffeeUrl = (funnel.coffeeChatImageUrl || "").trim();
+  if (ui.coffeeChatPhoto && coffeeUrl) {
+    ui.coffeeChatPhoto.src = coffeeUrl;
+    ui.coffeeChatPhoto.alt = "Coffee";
+  }
+}
+
+function mountCalendlyIframeFallback(parent, url) {
+  parent.innerHTML = "";
+  const ifr = document.createElement("iframe");
+  ifr.src = url;
+  ifr.width = "100%";
+  ifr.height = "700";
+  ifr.style.border = "0";
+  ifr.style.minHeight = "680px";
+  ifr.title = "Schedule a coffee chat";
+  ifr.setAttribute("loading", "lazy");
+  parent.appendChild(ifr);
+}
+
+function mountCalendlyEmbed() {
+  const url = CONFIG.funnel?.calendlyUrl;
+  const parent = ui.calendlyEmbed;
+  if (!parent || !url) return;
+  parent.innerHTML = "";
+
+  const tryInit = () => {
+    if (window.Calendly && typeof window.Calendly.initInlineWidget === "function") {
+      try {
+        window.Calendly.initInlineWidget({ url, parentElement: parent });
+      } catch {
+        mountCalendlyIframeFallback(parent, url);
+      }
+      return true;
+    }
+    return false;
+  };
+
+  if (tryInit()) return;
+
+  let attempts = 0;
+  const id = window.setInterval(() => {
+    attempts += 1;
+    if (tryInit()) {
+      window.clearInterval(id);
+      return;
+    }
+    if (attempts >= 50) {
+      window.clearInterval(id);
+      mountCalendlyIframeFallback(parent, url);
+    }
+  }, 100);
+}
+
+function syncSchedulingSection() {
+  const hasCal = !!CONFIG.funnel?.calendlyUrl;
+  if (ui.schedulingBlock) ui.schedulingBlock.hidden = !hasCal;
+  if (ui.calendlyBtn) ui.calendlyBtn.href = CONFIG.funnel.calendlyUrl || "#";
+  if (!hasCal) return;
+  applySchedulingHeader();
+  window.requestAnimationFrame(() => {
+    mountCalendlyEmbed();
+  });
+}
+
+function getQuestion(index) {
+  return CONFIG.questions[index] || null;
+}
+
+function getDimensionMeta(question) {
+  if (!question) return null;
+  if (question.sectionLabel) return { name: question.sectionLabel };
+  const d = CONFIG.dimensions.find((x) => x.id === question.dimensionId);
+  return d || null;
 }
 
 function getOptionById(question, optionId) {
@@ -320,13 +544,14 @@ function renderQuestion(state) {
   const total = CONFIG.questions.length;
   const pos = state.currentIndex + 1;
   ui.progressText.textContent = `Question ${pos} of ${total}`;
-  ui.progressBar.style.width = `${percent(pos, total)}%`;
+  ui.progressBar.style.width = `${Math.round((pos / total) * 100)}%`;
 
   const dim = getDimensionMeta(q);
   ui.dimensionPill.textContent = dim?.name || "Reflection";
 
   ui.questionTitle.textContent = q.title;
   const answers = state.answers;
+
   if (q.help) {
     ui.questionHelp.hidden = false;
     let helpText = q.help;
@@ -348,11 +573,7 @@ function renderQuestion(state) {
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "answerBtn" + (answers[q.id] === opt.value ? " selected" : "");
-      btn.innerHTML = `
-        <div class="answerTop">
-          <div class="answerLabel">${escapeHtml(opt.label)}</div>
-        </div>
-      `;
+      btn.innerHTML = `<div class="answerTop"><div class="answerLabel">${escapeHtml(opt.label)}</div></div>`;
       btn.addEventListener("click", () => {
         state.answers[q.id] = opt.value;
         saveState(state);
@@ -370,12 +591,7 @@ function renderQuestion(state) {
       btn.type = "button";
       const isOn = selected.includes(opt.id);
       btn.className = "answerBtn" + (isOn ? " selected" : "");
-      btn.innerHTML = `
-        <div class="answerTop">
-          <div class="answerLabel">${escapeHtml(opt.label)}</div>
-          <div class="answerValue">${isOn ? "✓" : ""}</div>
-        </div>
-      `;
+      btn.innerHTML = `<div class="answerTop"><div class="answerLabel">${escapeHtml(opt.label)}</div><div class="answerValue">${isOn ? "✓" : ""}</div></div>`;
       btn.addEventListener("click", () => {
         let next = [...selected];
         const idx = next.indexOf(opt.id);
@@ -393,11 +609,7 @@ function renderQuestion(state) {
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "answerBtn" + (answers[q.id] === opt.id ? " selected" : "");
-      btn.innerHTML = `
-        <div class="answerTop">
-          <div class="answerLabel">${escapeHtml(opt.label)}</div>
-        </div>
-      `;
+      btn.innerHTML = `<div class="answerTop"><div class="answerLabel">${escapeHtml(opt.label)}</div></div>`;
       btn.addEventListener("click", () => {
         state.answers[q.id] = opt.id;
         saveState(state);
@@ -417,22 +629,19 @@ function renderResults(state) {
   const yolo = computeYoloResult(state);
   const rt = yolo.resultType;
 
-  ui.resultsKicker.textContent = "Your YOLO Index";
+  ui.resultsKicker.textContent = "Your check-in";
   ui.resultsTitle.textContent = `${rt.emoji} ${rt.title}`;
   ui.resultsSummary.textContent = rt.description;
   ui.insightCallout.textContent = yolo.insight;
   ui.reflectionQuote.textContent = rt.reflection;
 
-  ui.resultsCoachingCta.href = CONFIG.funnel.calendlyUrl;
-  ui.resultsCoachingCta.textContent = rt.ctaLabel;
-  ui.resultsPrimaryCtaRow.hidden = !CONFIG.funnel?.calendlyUrl;
-
-  ui.bookingRow.hidden = !CONFIG.funnel?.calendlyUrl;
+  syncSchedulingSection();
   ui.shareFineprint.hidden = true;
 
   const shareLink = buildShareLink(yolo);
   ui.shareLinkedInBtn.onclick = () => shareOnLinkedIn(rt, shareLink);
   ui.copyLinkBtn.onclick = () => copyToClipboard(shareLink);
+  applyLinkedInToLeadForm();
 }
 
 function buildShareLink(yolo) {
@@ -445,7 +654,8 @@ function buildShareLink(yolo) {
 }
 
 function shareOnLinkedIn(resultType, shareLink) {
-  const text = `I just took the YOLO Index (“Are you letting your life shine?”). My pattern: ${resultType.emoji} ${resultType.title}.`;
+  const shortName = (CONFIG.brand.footerName || "Whose Life Are You Living?").replace(/"/g, "");
+  const text = `I just took “${shortName}.” My pattern: ${resultType.emoji} ${resultType.title}.`;
   const shareUrl = `https://www.linkedin.com/feed/?shareActive=true&text=${encodeURIComponent(
     `${text}\n\nTry it: ${shareLink}`
   )}`;
@@ -510,9 +720,25 @@ function getResultTypeById(id) {
   return values.find((t) => t.id === id) || null;
 }
 
-function boot() {
+async function boot() {
+  await handleLinkedInOAuthReturn();
   applyBrandCopy();
   wirePrivacy();
+  showOAuthFlashIfAny();
+
+  ui.liSignInBtn.addEventListener("click", () => {
+    if (loadLinkedInProfile()) {
+      clearLinkedInProfile();
+      syncLinkedInIntroButton();
+      if (ui.oauthFlash) {
+        ui.oauthFlash.textContent = "Signed out of LinkedIn.";
+        ui.oauthFlash.hidden = false;
+      }
+    } else {
+      if (ui.oauthFlash) ui.oauthFlash.hidden = true;
+      startLinkedInOAuth();
+    }
+  });
 
   let state = loadState() || initState();
 
@@ -587,6 +813,7 @@ function boot() {
         utm: state.utm,
         submittedAt: new Date().toISOString(),
         pageUrl: window.location.href,
+        linkedinSub: loadLinkedInProfile()?.sub ?? null,
       };
       await submitLead(payload);
 
@@ -597,7 +824,7 @@ function boot() {
     } catch (err) {
       ui.leadSubmitBtn.disabled = false;
       ui.leadFineprint.textContent =
-        "Couldn’t send right now. Try again in a minute, or use the booking link below.";
+        "Couldn’t send right now. Try again in a minute, or use the calendar below.";
       console.error(err);
     }
   });
@@ -618,13 +845,10 @@ function boot() {
       ui.resultsKicker.textContent = "Shared result";
       ui.resultsTitle.textContent = `${sharedType.emoji} ${sharedType.title}`;
       ui.resultsSummary.textContent =
-        "Someone shared their YOLO Index pattern. Take the assessment yourself to get insight tailored to your answers—without judgment.";
+        "Someone shared their check-in result. Take the assessment yourself to get insight tailored to your answers—without judgment.";
       ui.insightCallout.textContent = sharedType.insight;
       ui.reflectionQuote.textContent = sharedType.reflection;
-      ui.resultsCoachingCta.href = CONFIG.funnel.calendlyUrl;
-      ui.resultsCoachingCta.textContent = sharedType.ctaLabel;
-      ui.resultsPrimaryCtaRow.hidden = !CONFIG.funnel?.calendlyUrl;
-      ui.bookingRow.hidden = !CONFIG.funnel?.calendlyUrl;
+      syncSchedulingSection();
       ui.shareFineprint.hidden = false;
       ui.shareFineprint.textContent = "This preview doesn’t include your personal constraint mix—take the quiz for that.";
       const previewLink = window.location.href;
@@ -643,4 +867,4 @@ function boot() {
   }
 }
 
-boot();
+void boot().catch((err) => console.error(err));

@@ -3,38 +3,39 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>YOLO Index — Are You Letting Your Life Shine?</title>
+    <title>Take a quiz: Whose Life Are You Living?</title>
     <meta
       name="description"
-      content="A 3–5 minute reflection from BlingBling: clarity, alignment, action, and what holds you back—without judgment."
+      content="A calm 3–5 minute private reflection from BlingBling Coaching—turn inward and notice how aligned your life really feels."
     />
     <link rel="stylesheet" href="./styles.css" />
+    <link href="https://assets.calendly.com/assets/external/widget.css" rel="stylesheet" />
   </head>
   <body>
-    <div class="bg" aria-hidden="true"></div>
+    <div class="pageAtmosphere" aria-hidden="true"></div>
     <main class="container">
       <header class="topbar">
         <div class="brand">
-          <div class="logo" aria-hidden="true"></div>
           <div class="brandText">
-            <div class="brandName" id="brandName">YOLO Index</div>
-            <div class="brandTagline" id="brandTagline">by BlingBling</div>
+            <div class="brandName" id="brandName">Take a quiz: Whose Life Are You Living?</div>
+            <div class="brandTagline" id="brandTagline">by BlingBling Coaching</div>
           </div>
         </div>
         <a class="ghostBtn" id="restartBtn" href="#" hidden>Restart</a>
       </header>
 
-      <section class="card" id="screenIntro">
-        <div class="kicker" id="introKicker">3–5 minutes</div>
-        <h1 class="h1" id="introTitle">Are you letting your life shine?</h1>
-        <p class="p" id="introBody">
-          A private reflection for people who are doing well on paper—but sense something deeper wants attention.
-        </p>
-        <ul class="bullets" id="introBullets"></ul>
+      <section class="card card--landing" id="screenIntro">
+        <div class="kicker kicker--introSentence" id="introKicker">
+          Take a 3-minute private check-in to see how aligned your life really feels
+        </div>
+        <h1 class="h1" id="introTitle">Is the life you're living actually yours?</h1>
+        <div class="introContent" id="introContent"></div>
+        <ul class="bullets bullets--landing" id="introBullets"></ul>
         <div class="row">
-          <button class="primaryBtn" id="startBtn" type="button">Start assessment</button>
+          <button class="primaryBtn" id="startBtn" type="button">Take the assessment</button>
           <button class="secondaryBtn" id="liSignInBtn" type="button" hidden>Sign in with LinkedIn</button>
         </div>
+        <p class="fineprint oauthFlash" id="oauthFlash" hidden></p>
         <div class="fineprint" id="introFineprint">
           By continuing, you agree to our <a href="#" id="privacyLink">privacy policy</a>.
         </div>
@@ -42,6 +43,12 @@
 
       <section class="card" id="screenQuiz" hidden>
         <div class="quizTop">
+          <div class="quizDecor" aria-hidden="true">
+            <svg class="quizDecorSvg" viewBox="0 0 20 20" focusable="false">
+              <circle cx="10" cy="10" r="7" fill="none" stroke="currentColor" stroke-width="1" opacity="0.25" />
+              <circle cx="10" cy="10" r="2" fill="currentColor" opacity="0.2" />
+            </svg>
+          </div>
           <div class="progressWrap" aria-label="Progress">
             <div class="progressBar" id="progressBar"></div>
           </div>
@@ -64,41 +71,73 @@
 
       <section class="card" id="screenResults" hidden>
         <div class="resultsHeader">
-          <div class="kicker" id="resultsKicker">Your YOLO Index</div>
+          <div class="kicker" id="resultsKicker">Your check-in</div>
           <h2 class="h1 resultsTypeTitle" id="resultsTitle">🟢 Fully Lit</h2>
           <p class="p" id="resultsSummary"></p>
         </div>
 
-        <div class="panel resultsPanel">
-          <div class="panelTitle">Insight</div>
+        <div class="panel resultsPanel resultsPanel--insight">
+          <div class="panelTitleRow">
+            <span class="panelIcon" aria-hidden="true">
+              <svg viewBox="0 0 20 20" focusable="false">
+                <path
+                  d="M10 3v2M10 15v2M4.22 4.22l1.42 1.42M14.36 14.36l1.42 1.42M3 10h2M15 10h2M4.22 15.78l1.42-1.42M14.36 5.64l1.42-1.42"
+                  stroke="currentColor"
+                  stroke-width="1.2"
+                  stroke-linecap="round"
+                  fill="none"
+                  opacity="0.5"
+                />
+                <circle cx="10" cy="10" r="3" fill="currentColor" opacity="0.12" />
+              </svg>
+            </span>
+            <span class="panelTitle">Insight</span>
+          </div>
           <div class="callout" id="insightCallout"></div>
         </div>
-        <div class="panel resultsPanel">
-          <div class="panelTitle">A question to sit with</div>
+        <div class="panel resultsPanel resultsPanel--reflection">
+          <div class="panelTitleRow">
+            <span class="panelIcon" aria-hidden="true">
+              <svg viewBox="0 0 20 20" focusable="false">
+                <path
+                  d="M5 8c0-2.5 2-4.5 5-4.5s5 2 5 4.5c0 3-2.5 5.5-5 8-2.5-2.5-5-5-5-8z"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.2"
+                  stroke-linejoin="round"
+                  opacity="0.45"
+                />
+                <circle cx="10" cy="7.5" r="1.2" fill="currentColor" opacity="0.35" />
+              </svg>
+            </span>
+            <span class="panelTitle">A question to sit with</span>
+          </div>
           <blockquote class="reflectionQuote" id="reflectionQuote"></blockquote>
         </div>
 
-        <div class="ctaRow" id="resultsPrimaryCtaRow">
-          <a class="primaryBtn linkBtn" id="resultsCoachingCta" href="#" target="_blank" rel="noreferrer"
-            >Explore coaching</a
-          >
-        </div>
-
-        <div class="divider"></div>
-
-        <div class="panel">
-          <div class="panelTitle">Share</div>
-          <p class="p subtle shareHint">
-            No numeric score is shown—just your pattern. Share the assessment if it sparked something.
-          </p>
-          <div class="row">
-            <button class="secondaryBtn" id="shareLinkedInBtn" type="button">Share on LinkedIn</button>
-            <button class="ghostBtn" id="copyLinkBtn" type="button">Copy link</button>
+        <div class="resultsPanel sharePanel">
+          <div class="sharePanelInner">
+            <div class="panelTitleRow sharePanelTitleRow">
+              <span class="panelIcon panelIcon--share" aria-hidden="true">
+                <svg viewBox="0 0 20 20" focusable="false">
+                  <circle cx="6" cy="10" r="2.5" fill="none" stroke="currentColor" stroke-width="1.2" opacity="0.5" />
+                  <circle cx="14" cy="5" r="2.5" fill="none" stroke="currentColor" stroke-width="1.2" opacity="0.5" />
+                  <circle cx="14" cy="15" r="2.5" fill="none" stroke="currentColor" stroke-width="1.2" opacity="0.5" />
+                  <path d="M8 9l4-2.5M8 11l4 2.5" stroke="currentColor" stroke-width="1" opacity="0.4" />
+                </svg>
+              </span>
+              <span class="panelTitle sharePanelHeading">Share</span>
+            </div>
+            <p class="p subtle shareInviteCopy">
+              Share this quiz with your friend to see where he or she is at.
+            </p>
+            <div class="row shareActions">
+              <button class="secondaryBtn" id="shareLinkedInBtn" type="button">LinkedIn</button>
+              <button class="ghostBtn" id="copyLinkBtn" type="button">Copy link</button>
+            </div>
+            <div class="fineprint" id="shareFineprint" hidden></div>
           </div>
-          <div class="fineprint" id="shareFineprint" hidden></div>
         </div>
-
-        <div class="divider"></div>
 
         <div class="leadWrap">
           <div class="leadCopy">
@@ -119,15 +158,43 @@
           </form>
         </div>
 
-        <div class="ctaRow" id="bookingRow" hidden>
-          <a class="primaryBtn linkBtn" id="calendlyBtn" target="_blank" rel="noreferrer">Book a coffee chat</a>
-          <a class="ghostBtn linkBtn" id="restartFromResultsBtn" href="#">Retake</a>
+        <div class="schedulingBlock" id="schedulingBlock" hidden>
+          <div id="scheduling" class="schedulingAnchor" tabindex="-1"></div>
+          <p class="schedulingIntro" id="schedulingIntro">
+            Curious to learn more? Schedule time with a coach here!
+          </p>
+          <div class="schedulingHead">
+            <div class="schedulingThumbWrap">
+              <img
+                id="coffeeChatPhoto"
+                class="coffeeChatPhoto"
+                src=""
+                alt="Coffee"
+                width="64"
+                height="64"
+                loading="lazy"
+                decoding="async"
+              />
+            </div>
+            <div class="schedulingHeadText">
+              <h3 class="h2 schedulingTitle" id="schedulingTitle">Coffee chat</h3>
+              <p class="p subtle schedulingByline" id="schedulingByline"></p>
+            </div>
+          </div>
+          <div id="calendlyEmbed" class="calendlyEmbed"></div>
+          <p class="fineprint calendlyAlt">
+            <a class="textLink" id="calendlyBtn" target="_blank" rel="noreferrer">Open scheduling page in a new tab</a>
+          </p>
+        </div>
+
+        <div class="ctaRow bookingFooterRow" id="bookingRow">
+          <a class="ghostBtn linkBtn" id="restartFromResultsBtn" href="#">Retake assessment</a>
         </div>
       </section>
 
       <footer class="footer">
         <div class="footerInner">
-          <span id="footerBrand">YOLO Index</span>
+          <span id="footerBrand">Whose Life Are You Living?</span>
           <span class="dot">•</span>
           <a href="#" id="footerPrivacy">Privacy</a>
         </div>
@@ -141,17 +208,18 @@
           <button class="ghostBtn" id="closePrivacyBtn" type="button">Close</button>
         </div>
         <div class="modalBody" id="privacyBody">
+          <p class="p">We respect your privacy.</p>
+          <p class="p">Your responses are used only to generate your results and improve this experience.</p>
+          <p class="p">We do not sell or share your personal data.</p>
           <p class="p">
-            This assessment stores your answers in your browser while you take the quiz. If you choose to submit
-            your email, we store your results and contact info to send your report and follow up about coaching.
+            If you choose to provide your email, we may contact you—you can opt out anytime.
           </p>
-          <p class="p subtle">
-            Replace this text with your official privacy policy before publishing.
-          </p>
+          <p class="p">You can request deletion of your data at any time.</p>
         </div>
       </div>
     </dialog>
 
+    <script src="https://assets.calendly.com/assets/external/widget.js" async></script>
     <script src="./config.js"></script>
     <script src="./app.js"></script>
   </body>

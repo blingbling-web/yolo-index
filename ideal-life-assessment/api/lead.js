@@ -1,22 +1,28 @@
-export default async function handler(req, res) {
+async function handler(req, res) {
   if (req.method !== "POST") {
     res.status(405).json({ ok: false, error: "Method not allowed" });
     return;
   }
 
-  const body = req.body ?? {};
+  let body = req.body ?? {};
+  if (typeof body === "string") {
+    try {
+      body = JSON.parse(body || "{}");
+    } catch {
+      body = {};
+    }
+  }
+  if (!body || typeof body !== "object") body = {};
+
   const email = typeof body.email === "string" ? body.email.trim() : "";
   if (!email) {
     res.status(400).json({ ok: false, error: "Email is required" });
     return;
   }
 
-  // Forward to your Google Sheet via an Apps Script Web App (recommended).
-  // Set this in Vercel project env vars.
   const webhookUrl = process.env.GOOGLE_SHEETS_WEBHOOK_URL;
 
   if (!webhookUrl) {
-    // Still return OK so you can test the UX before wiring up Google Sheets.
     res.status(200).json({
       ok: true,
       forwarded: false,
@@ -26,11 +32,15 @@ export default async function handler(req, res) {
     return;
   }
 
+  const secret = process.env.SHEETS_WEBHOOK_SECRET;
+  const forwardPayload = { ...body };
+  if (secret) forwardPayload._webhookSecret = secret;
+
   try {
     const fwd = await fetch(webhookUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
+      body: JSON.stringify(forwardPayload),
     });
 
     if (!fwd.ok) {
@@ -49,3 +59,4 @@ export default async function handler(req, res) {
   }
 }
 
+module.exports = handler;
