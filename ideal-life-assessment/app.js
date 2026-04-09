@@ -683,12 +683,29 @@ async function submitLead(payload) {
     body: JSON.stringify(payload),
   });
 
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(`Lead submit failed (${res.status}): ${text || "unknown error"}`);
+  const raw = await res.text().catch(() => "");
+  let data = {};
+  try {
+    data = raw ? JSON.parse(raw) : {};
+  } catch {
+    data = {};
   }
 
-  return res.json().catch(() => ({}));
+  if (!res.ok) {
+    const detail = data.details || data.error || raw || "unknown error";
+    const msg = typeof detail === "string" ? detail : JSON.stringify(detail);
+    throw new Error(`Lead submit failed (${res.status}): ${msg}`);
+  }
+
+  /** Server returns 200 but skips Sheets when GOOGLE_SHEETS_WEBHOOK_URL is missing on Vercel. */
+  if (data.forwarded === false) {
+    throw new Error(
+      data.note ||
+        "Submission did not reach Google Sheets. Set GOOGLE_SHEETS_WEBHOOK_URL in Vercel and redeploy."
+    );
+  }
+
+  return data;
 }
 
 function wirePrivacy() {
@@ -817,15 +834,17 @@ async function boot() {
       };
       await submitLead(payload);
 
-      ui.leadFineprint.textContent = "Sent. Check your inbox (and spam/promotions).";
+      ui.leadFineprint.textContent =
+        "Thank you — your answers were saved. This page does not send an automatic email; we may follow up at the address you provided.";
       ui.leadSubmitBtn.disabled = true;
       ui.leadEmail.disabled = true;
       ui.leadName.disabled = true;
     } catch (err) {
       ui.leadSubmitBtn.disabled = false;
+      const hint = err && err.message ? String(err.message) : "Unknown error";
       ui.leadFineprint.textContent =
-        "Couldn’t send right now. Try again in a minute, or use the calendar below.";
-      console.error(err);
+        hint.length > 220 ? `${hint.slice(0, 217)}…` : hint;
+      console.error("Lead submit error:", err);
     }
   });
 

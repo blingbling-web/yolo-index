@@ -119,6 +119,29 @@ If `/api/lead` returns `forwarded: false`, the webhook URL is still missing on t
 
 ---
 
+## Debugging (nothing appears in the Sheet)
+
+Do these **in order**:
+
+1. **Push the latest code** (including the `api/lead.js` that checks the Google response) and **redeploy** Vercel.
+2. Submit the quiz email form again. If something is wrong, the **fine print under the button** should now show a **specific error** (not only “Couldn’t send”).
+3. **Vercel → Project → Deployments → latest → Functions / Logs** — open **Runtime Logs**, submit again, and look for `/api/lead` errors.
+4. Confirm **Environment Variables** has **`GOOGLE_SHEETS_WEBHOOK_URL`** exactly matching your **Deploy** Web App URL (ends in `/exec`), then **Redeploy** after any change.
+5. If you use a **webhook secret**: Vercel **`SHEETS_WEBHOOK_SECRET`** must **equal** Apps Script **Script properties → `WEBHOOK_SECRET`**. If one side has a secret and the other doesn’t, the script returns **Unauthorized** and no row is written.
+6. **Test Google directly** (replace the URL):
+
+   ```bash
+   curl -sS -X POST "YOUR_WEB_APP_URL" \
+     -H "Content-Type: application/json" \
+     -d '{"email":"debug-test@example.com","yoloTypeTitle":"curl","yoloType":"t","submittedAt":"2026-01-01T00:00:00.000Z","answers":{},"dimensionAvgs":{},"constraintTags":[]}'
+   ```
+
+   You want `{"ok":true,...}` in the response body **and** a new row. If you see `ok:false`, read the `error` field.
+
+7. **Subfolder sites:** The quiz calls **`/api/lead`** on the **same host** as the page. The site must be served at the domain root (e.g. `yoursite.vercel.app`), not only a path, unless you change `endpoints.lead` in `config.js` to include a base path.
+
+---
+
 ## Troubleshooting
 
 | Issue | What to check |

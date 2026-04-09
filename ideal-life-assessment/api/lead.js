@@ -43,12 +43,21 @@ async function handler(req, res) {
       body: JSON.stringify(forwardPayload),
     });
 
-    if (!fwd.ok) {
-      const text = await fwd.text().catch(() => "");
+    const text = await fwd.text().catch(() => "");
+    let sheetResponse = {};
+    try {
+      sheetResponse = text ? JSON.parse(text) : {};
+    } catch {
+      sheetResponse = { _raw: text };
+    }
+
+    /** Google Apps Script Web Apps often return HTTP 200 even when the JSON body says ok: false. */
+    if (!fwd.ok || sheetResponse.ok === false) {
       res.status(502).json({
         ok: false,
-        error: "Failed to forward to Google Sheets webhook",
-        details: text || `Status ${fwd.status}`,
+        error: "Google Sheets webhook rejected or failed the write",
+        details: sheetResponse.error || sheetResponse._raw || text || `HTTP ${fwd.status}`,
+        sheetResponse: sheetResponse.ok === false ? sheetResponse : undefined,
       });
       return;
     }
